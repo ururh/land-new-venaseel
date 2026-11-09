@@ -367,7 +367,10 @@ a {
   aspect-ratio: 760/1099;
   filter: drop-shadow(0 22px 34px rgba(10, 42, 102, .22))
 }
-
+.img-form{
+  max-width: 200px;
+  justify-self: center;
+}
 .usp {
   list-style: none;
   display: grid;
