@@ -36,13 +36,23 @@
       const claw = game.querySelector('.cm50-claw');
       const play = game.querySelector('.cm50-play');
       const status = game.querySelector('.cm50-status');
-      const gift = game.querySelector('.cm50-gift-target');
+      const gifts = [
+        game.querySelector('.cm50-gift-target'),
+        game.querySelector('.cm50-gift-one')
+      ];
       const windowEl = game.querySelector('.cm50-window');
       const result = game.querySelector('.cm50-result');
       const claim = game.querySelector('.cm50-claim');
+      const resultIcon = result.querySelector('.cm50-result-icon');
+      const resultTitle = result.querySelector('.cm50-result-title');
+      const resultPercent = result.querySelector('.cm50-result-percent');
+      const resultDescription = result.querySelector('.cm50-result-description');
+      const winningContent = [resultIcon, resultTitle, resultPercent, resultDescription, claim]
+        .map(element => element.textContent);
 
       let playing = false;
       let completed = false;
+      let attempts = 0;
 
       const wait = ms => new Promise(resolve => {
         setTimeout(resolve, ms);
@@ -52,7 +62,7 @@
         claw.style.left = x + 'px';
       }
 
-      function giftPosition() {
+      function giftPosition(gift) {
         const giftRect = gift.getBoundingClientRect();
         const winRect = windowEl.getBoundingClientRect();
 
@@ -96,6 +106,8 @@
         if (playing || completed) return;
 
         playing = true;
+        attempts += 1;
+        const gift = gifts[attempts - 1];
         play.disabled = true;
         play.textContent = 'ГРА ТРИВАЄ...';
 
@@ -104,7 +116,7 @@
         moveClaw(windowEl.clientWidth * .7);
         await wait(1050);
 
-        moveClaw(giftPosition());
+        moveClaw(giftPosition(gift));
         await wait(1100);
 
         status.textContent = '⬇️ Опускаємо клешню...';
@@ -133,17 +145,38 @@
         status.textContent = '🎉 Бонус відкрито!';
         await wait(500);
 
-        completed = true;
+        completed = attempts === 2;
         playing = false;
 
+        if (!completed) {
+          resultIcon.textContent = '🎁';
+          resultTitle.textContent = 'СПРОБУЙТЕ ЩЕ РАЗ!';
+          resultPercent.textContent = '−20%';
+          resultDescription.textContent = 'У першій коробочці — знижка 20%. Спробуйте ще раз, щоб отримати більший бонус!';
+          claim.textContent = 'ПРОДОВЖИТИ';
+          status.textContent = '🎁 Ви відкрили 20%! Є ще одна спроба.';
+        } else {
+          [resultIcon, resultTitle, resultPercent, resultDescription, claim]
+            .forEach((element, index) => { element.textContent = winningContent[index]; });
+          createConfetti();
+        }
         result.classList.add('cm50-visible');
         result.setAttribute('aria-hidden', 'false');
 
         claim.focus({ preventScroll: true });
-        createConfetti();
       }
 
       function claimBonus() {
+        if (!completed && attempts === 1 && !playing) {
+          result.classList.remove('cm50-visible');
+          result.setAttribute('aria-hidden', 'true');
+          claw.classList.remove('cm50-down', 'cm50-closed', 'cm50-holding');
+          play.disabled = false;
+          play.textContent = 'СПРОБУВАТИ УДАЧУ';
+          status.textContent = 'Натисни «Спробувати удачу», щоб відкрити ще одну коробочку!';
+          play.focus({ preventScroll: true });
+          return;
+        }
         if (!completed || game.hidden) return;
         result.classList.remove('cm50-visible');
         result.setAttribute('aria-hidden', 'true');
